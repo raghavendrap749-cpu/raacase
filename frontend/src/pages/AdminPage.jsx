@@ -105,7 +105,25 @@ function AdminPage() {
   }
 
   useEffect(() => {
-    if (token) loadProducts()
+    if (!token) return undefined
+
+    let active = true
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        const result = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(result?.message || 'Could not load products.')
+        if (!Array.isArray(result)) throw new Error('The products response was invalid.')
+        if (active) setProducts(result)
+      } catch (error) {
+        if (active) setStatus(error instanceof Error ? error.message : 'Could not load products.')
+      }
+    }
+
+    fetchProducts()
+    return () => {
+      active = false
+    }
   }, [token])
 
   useEffect(() => () => imagePreviews.forEach((preview) => URL.revokeObjectURL(preview)), [imagePreviews])

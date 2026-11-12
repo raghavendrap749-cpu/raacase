@@ -8,7 +8,8 @@ frontend_pipeline:
       - local: .gitlab/ci/frontend.yml
     strategy: depend
   rules:
-    - changes:
+    - if: '$CI_COMMIT_BRANCH == "prod"'
+      changes:
         - frontend/*
         - frontend/**/*
         - .gitlab-ci.yml
@@ -21,7 +22,8 @@ backend_pipeline:
       - local: .gitlab/ci/backend.yml
     strategy: depend
   rules:
-    - changes:
+    - if: '$CI_COMMIT_BRANCH == "prod"'
+      changes:
         - backend/*
         - backend/**/*
         - .gitlab-ci.yml
