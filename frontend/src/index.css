@@ -1,0 +1,98 @@
+/* ==========================================================================
+   index.css — document base and reset only.
+   All design tokens and component styles live in App.css, scoped to the
+   theme class on .store-app.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Keep the root at the browser default so the rem type scale in App.css
+     respects the user's own font-size setting. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The theme class lives on .store-app, but the scroll/overscroll area belongs
+   to the document. Mirror the page colour up to <html> so rubber-band
+   scrolling and the scrollbar gutter match the active theme. */
+html {
+  background: #101010;
+}
+
+html:has(.theme-light) {
+  background: #f7f7f7;
+}
+
+html:has(.theme-dark) {
+  background: #101010;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+/* Let headings inherit from the design system rather than the UA sheet. */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+/* Form controls do not inherit typography by default. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Respect the OS "reduce motion" setting across every animated rule. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

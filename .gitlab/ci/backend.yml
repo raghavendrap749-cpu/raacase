@@ -1,0 +1,45 @@
+stages:
+  - install
+  - build
+  - docker
+
+variables:
+  ACR_NAME: "youracrname"
+  ACR_SERVER: "${ACR_NAME}.azurecr.io"
+  BACKEND_IMAGE: "${ACR_SERVER}/backend"
+
+backend_install:
+  stage: install
+  image: node:20-alpine
+  script:
+    - cd backend
+    - npm install
+  cache:
+    key:
+      files:
+        - backend/package-lock.json
+    paths:
+      - backend/node_modules/
+
+backend_build:
+  stage: build
+  image: node:20-alpine
+  needs:
+    - backend_install
+  script:
+    - cd backend
+    - npm run build
+
+backend_docker:
+  stage: docker
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  needs:
+    - backend_build
+  script:
+    - echo "$AZURE_ACR_PASSWORD" | docker login "$ACR_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin
+    - docker build -t "$BACKEND_IMAGE:$CI_COMMIT_SHA" ./backend
+    - docker tag "$BACKEND_IMAGE:$CI_COMMIT_SHA" "$BACKEND_IMAGE:latest"
+    - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHA"
+    - docker push "$BACKEND_IMAGE:latest"

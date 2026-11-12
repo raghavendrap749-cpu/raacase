@@ -1,0 +1,33 @@
+stages:
+  - child_pipelines
+
+frontend_pipeline:
+  stage: child_pipelines
+  trigger:
+    include:
+      - local: .gitlab/ci/frontend.yml
+    strategy: depend
+  rules:
+    - changes:
+        - frontend/*
+        - frontend/**/*
+        - .gitlab-ci.yml
+        - .gitlab/ci/frontend.yml
+
+backend_pipeline:
+  stage: child_pipelines
+  trigger:
+    include:
+      - local: .gitlab/ci/backend.yml
+    strategy: depend
+  rules:
+    - changes:
+        - backend/*
+        - backend/**/*
+        - .gitlab-ci.yml
+        - .gitlab/ci/backend.yml
+
+# Set these in GitLab -> Settings -> CI/CD -> Variables:
+# AZURE_ACR_USERNAME
+# AZURE_ACR_PASSWORD
+# ACR_NAME

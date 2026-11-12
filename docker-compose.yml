@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: project-raa-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Set DB_ADMIN_PASSWORD in the root .env file}
+      POSTGRES_DB: project_raa
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - project-raa-postgres:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d project_raa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-init:
+    image: postgres:16-alpine
+    container_name: project-raa-db-init
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGDATABASE: project_raa
+      PGPASSWORD: ${DB_ADMIN_PASSWORD:?Set DB_ADMIN_PASSWORD in the root .env file}
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD:?Set DB_ADMIN_PASSWORD in the root .env file}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the root .env file}
+      DB_MIGRATION_PASSWORD: ${DB_MIGRATION_PASSWORD:?Set DB_MIGRATION_PASSWORD in the root .env file}
+    command: ["psql", "--set=ON_ERROR_STOP=1", "--file=/database/create-app-roles.sql"]
+    volumes:
+      - ./backend/database/create-app-roles.sql:/database/create-app-roles.sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: project-raa-backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: project_raa_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the root .env file}
+      DB_NAME: project_raa
+      UPLOAD_DIR: /app/uploads
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-raacase.18@gmail.com}
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - project-raa-uploads:/app/uploads
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: project-raa-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  project-raa-postgres:
+  project-raa-uploads:

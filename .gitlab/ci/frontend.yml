@@ -1,0 +1,45 @@
+stages:
+  - install
+  - build
+  - docker
+
+variables:
+  ACR_NAME: "youracrname"
+  ACR_SERVER: "${ACR_NAME}.azurecr.io"
+  FRONTEND_IMAGE: "${ACR_SERVER}/frontend"
+
+frontend_install:
+  stage: install
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm install
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - frontend/node_modules/
+
+frontend_build:
+  stage: build
+  image: node:20-alpine
+  needs:
+    - frontend_install
+  script:
+    - cd frontend
+    - npm run build
+
+frontend_docker:
+  stage: docker
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  needs:
+    - frontend_build
+  script:
+    - echo "$AZURE_ACR_PASSWORD" | docker login "$ACR_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin
+    - docker build -t "$FRONTEND_IMAGE:$CI_COMMIT_SHA" ./frontend
+    - docker tag "$FRONTEND_IMAGE:$CI_COMMIT_SHA" "$FRONTEND_IMAGE:latest"
+    - docker push "$FRONTEND_IMAGE:$CI_COMMIT_SHA"
+    - docker push "$FRONTEND_IMAGE:latest"
