@@ -1,6 +1,11 @@
 stages:
   - child_pipelines
 
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "prod"'
+    - when: never
+
 frontend_pipeline:
   stage: child_pipelines
   trigger:
